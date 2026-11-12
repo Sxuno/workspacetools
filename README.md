@@ -96,7 +96,7 @@ echo "Full path: $PLUGIN_PATH"
 ### notes
 ```
 /Path/To/UnrealEngine/Engine/Binaries/DotNET/UnrealBuildTool/UnrealBuildTool.dll \
-    -project="/media/stefan-wienold/UnrealEngine/Projects/IsekaiAdventures/source/IsekaiAdventures/IsekaiAdventures.uproject" \
+    -project="/PATHTOFOLDER/UnrealEngine/Projects/IsekaiAdventures/source/IsekaiAdventures/IsekaiAdventures.uproject" \
     BlenderPointcloudsEditor Linux Development \
     -TargetType=Editor \
     -ModuleWithSuffix=BlenderPointclouds,3603
