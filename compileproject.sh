@@ -14,7 +14,7 @@
 # -------------------------------
 # PATH TO ENGINE
 # -------------------------------
-DIR_ENGINE="/media/stefan-wienold/UnrealEngine/Source/"
+DIR_ENGINE="/UnrealEngine/Source/"
 # -------------------------------
 # DETECT PROJECT NAME
 # -------------------------------

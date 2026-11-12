@@ -11,7 +11,7 @@ Console > Exits
 ## Build Version
 update ProjectFileEditor.Target.cs
 
-```Json
+```cpp
 	DefaultBuildSettings = BuildSettingsVersion.V6; // Version dependend
 	IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_7; // Version
 ```
@@ -33,7 +33,7 @@ build project file binaries
 # ~/PROJECT_NAME/source/PROJECT_NAME        UEPROJECTFILES
 
 # path to engine
-ENGINE_DIR="/media/stefan-wienold/UnrealEngine/Source/"
+ENGINE_DIR="/UnrealEngine/Source/"
 
 # detect Project name
 SOURCE_DIR=$(dirname "$(realpath "$0")")
@@ -93,7 +93,7 @@ echo "You selected plugin: $SELECTED_PLUGIN"
 PLUGIN_PATH="$PLUGINS_DIR/$SELECTED_PLUGIN"
 echo "Full path: $PLUGIN_PATH"
 ```
-
+### notes
 ```
 /Path/To/UnrealEngine/Engine/Binaries/DotNET/UnrealBuildTool/UnrealBuildTool.dll \
     -project="/media/stefan-wienold/UnrealEngine/Projects/IsekaiAdventures/source/IsekaiAdventures/IsekaiAdventures.uproject" \
