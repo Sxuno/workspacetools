@@ -1,0 +1,172 @@
+#!/bin/bash
+
+# -------------------------------
+# CONFIG
+# -------------------------------
+# PROJECT STRUCTURE
+# ~/PROJECT_NAME/                                               WORKSPACE
+# ~/PROJECT_NAME/source                                         SOURCE_DIR
+# ~/PROJECT_NAME/source/PROJECT_NAME                            PROJECT_FILES
+#
+# PLUGIN STRUCTURE
+# ~/PROJECT_NAME/source/PROJECT_NAME/Plugins					DIR_PLUGIN
+# ~/PROJECT_NAME/source/PRJOECT_NAME/Plugins/PLUGIN_NAME		PLUGINFILES
+# -------------------------------
+# PATH TO ENGINE
+# -------------------------------
+DIR_ENGINE="/media/stefan-wienold/UnrealEngine/Source/"
+# -------------------------------
+# DETECT PROJECT NAME
+# -------------------------------
+DIR_SCRIPT=$(dirname "$(realpath "$0")")
+IFS='/' read -ra FOLDERS <<< "$DIR_SCRIPT"
+PROJECT_NAME=${FOLDERS[-2]}
+PROJECT_FILES="$DIR_SCRIPT/$PROJECT_NAME"
+# -------------------------------
+# SET DEFAULT DIRS
+# -------------------------------
+PLUGIN_DIR="$PROJECT_FILES/Plugins"
+# -------------------------------
+# ARROW KEY SELECTOR
+# -------------------------------
+select_action() {
+    local prompt="$1"
+    shift
+    local options=("$@")
+    local selected=0
+    local key
+
+    while true; do
+        # clear line and redraw
+        printf "\r\033[K%s > %s" "$prompt" "${options[$selected]}"
+
+        IFS= read -rsn1 key
+
+        case "$key" in
+            $'\x1b')
+                read -rsn2 key
+                case "$key" in
+                    '[A') ((selected = (selected - 1 + ${#options[@]}) % ${#options[@]})) ;;
+                    '[B') ((selected = (selected + 1) % ${#options[@]})) ;;
+                esac
+                ;;
+            "")
+                echo
+                return "$selected"
+                ;;
+        esac
+    done
+}
+build_plugin() {
+    local plugin="$1"
+    local path="$PLUGIN_DIR/$plugin"
+
+    echo "Building plugin: $plugin"
+    "$ENGINE_DIR/Engine/Build/BatchFiles/Linux/Build.sh" \
+        "$PROJECT_NAME"Editor Linux Development \
+        -project="$PROJECT_FILES/$PROJECT_NAME.uproject" \
+        -ModuleWithSuffix="$plugin,3603"
+    local status=$?
+    if [ $status -ne 0 ]; then
+        echo "Plugin build failed. Returing to menu..."
+        read -n1 -p "Press any key to continue..."
+        return 1
+    fi
+
+    echo "Plugin build finished."
+    read -n1 -p "Press any key to continue..."
+    return 0
+}
+# -------------------------------
+# MAIN ARROW-KEY MENU
+# -------------------------------
+select_action "Console" "Generate Project Files" "Build Project Files" "Build Plugin" "Exit"
+case $? in
+    0)
+        "$DIR_ENGINE/Engine/Build/BatchFiles/Linux/GenerateProjectFiles.sh" \
+            -project="$PROJECT_FILES/$PROJECT_NAME.uproject"
+        echo
+        read -n1 -p "Press any key to continue..."
+        ;;
+    1)
+        "$DIR_ENGINE/Engine/Build/BatchFiles/Linux/Build.sh" \
+            "$PROJECT_NAME"Editor Linux Development \
+            -project="$PROJECT_FILES/$PROJECT_NAME.uproject"
+        echo
+        read -n1 -p "Press any key to continue..."
+        ;;
+    2)  
+        # select plugin
+        while true; do
+            # -------------------------------
+            # SCAN PLUGINS
+            # -------------------------------
+            mapfile -t PLUGIN_ARRAY < <(find "$PLUGIN_DIR" -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)
+
+            if [ ${#PLUGIN_ARRAY[@]} -eq 0 ]; then
+                echo "No plugins found in $PLUGIN_DIR"
+                read -n1 -p "Press any key to continue..."
+                break  # nothing to build, exit loop
+            fi
+
+            # -------------------------------
+            # DISPLAY OPTIONS
+            # -------------------------------
+            echo "Available plugins:"
+            echo
+            for plugin in "${PLUGIN_ARRAY[@]}"; do
+                echo "  > $plugin"
+            done
+            echo 
+            echo "Any change to UCLASS layouts or Factory/AssetTypeActions code, "
+            echo "always need a full editor restart, "
+            echo "because Hot Reload cannot safely replace default objects."
+            echo
+            # -------------------------------
+            # PROMPT USER FOR PLUGIN NAME
+            # -------------------------------
+            read -p "Type the plugin name to build: " selection
+
+            # Check if input matches a scanned plugin folder
+
+            MATCHED=false
+            for plugin in "${PLUGIN_ARRAY[@]}"; do
+                if [ "$selection" == "$plugin" ]; then
+                    MATCHED=true
+                    break
+                fi
+            done
+
+            if [ "$MATCHED" = false ]; then
+                echo "No matching plugin found."
+                echo
+                read -n1 -p "Press any key to refresh..."
+                continue  # back to while loop for new input
+            fi
+
+            # -------------------------------
+            # BUILD SELECTED PLUGIN
+            # -------------------------------
+            SELECTED_PLUGIN="$selection"
+            PLUGIN_PATH="$PLUGIN_DIR/$SELECTED_PLUGIN"
+
+            echo
+            echo "PLUGIN: $SELECTED_PLUGIN"
+            echo "PATH: $PLUGIN_PATH"
+            echo
+
+            "$DIR_ENGINE/Engine/Build/BatchFiles/Linux/Build.sh" \
+                "$PROJECT_NAME"Editor Linux Development \
+                -project="$PROJECT_FILES/$PROJECT_NAME.uproject" \
+                -ModuleWithSuffix="$SELECTED_PLUGIN,3603"
+            echo
+            echo "Plugin build finished."
+            echo
+            read -n1 -p "Press any key to exit..."
+            break  # exit loop after successful build            
+        done
+        ;;
+    3)
+        exit 0
+        ;;
+esac
